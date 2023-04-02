@@ -1,47 +1,27 @@
 class Node:
-   def __init__(self, data=None):
-      self.data = data
-      self.next = None
+   def __init__(self, dataval=None):
+      self.dataval = dataval
+      self.nextval = None
+
 class SLinkedList:
    def __init__(self):
-      self.head = None
+      self.headval = None
 
-   def Atbegining(self, data_in):
-      NewNode = Node(data_in)
-      NewNode.next = self.head
-      self.head = NewNode
+   def listprint(self):
+      printval = self.headval
+      while printval is not None:
+         print (printval.dataval)
+         printval = printval.nextval
 
-# Function to remove node
-   def RemoveNode(self, Removekey):
-      HeadVal = self.head
-         
-      if (HeadVal is not None):
-         if (HeadVal.data == Removekey):
-            self.head = HeadVal.next
-            HeadVal = None
-            return
-      while (HeadVal is not None):
-         if HeadVal.data == Removekey:
-            break
-         prev = HeadVal
-         HeadVal = HeadVal.next
+list = SLinkedList()
+list.headval = Node("Mon")
+e2 = Node("Tue")
+e3 = Node("Wed")
 
-      if (HeadVal == None):
-         return
+# Link first Node to second node
+list.headval.nextval = e2
 
-      prev.next = HeadVal.next
-      HeadVal = None
+# Link second Node to third node
+e2.nextval = e3
 
-   def LListprint(self):
-      printval = self.head
-      while (printval):
-         print(printval.data),
-         printval = printval.next
-
-llist = SLinkedList()
-llist.Atbegining("Mon")
-llist.Atbegining("Tue")
-llist.Atbegining("Wed")
-llist.Atbegining("Thu")
-llist.RemoveNode("Tue")
-llist.LListprint()
+list.listprint()
