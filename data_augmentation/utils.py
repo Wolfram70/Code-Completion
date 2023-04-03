@@ -1,6 +1,3 @@
-# Copyright (c) Microsoft Corporation. 
-# Licensed under the MIT license.
-
 import re
 from io import StringIO
 import tokenize

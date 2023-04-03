@@ -1,8 +1,3 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
-# This script is used to generate the embedding vectors for the given dataset.
-
 import argparse
 import logging
 import os
@@ -63,7 +58,7 @@ class InferDataset(Dataset):
         if code.startswith("<s>"):
             code = code.lstrip("<s>")
         if code.endswith("</s>"):
-            code = code.rstrip("</s>")
+            code = code.removesuffix("</s>")
         code = code.replace("<EOL>", "\n")
         code = code.replace("<NUM_LIT>", "0").replace("<STR_LIT>", "").replace("<CHAR_LIT>", "")
         pattern = re.compile(r"<(STR|NUM|CHAR)_LIT:(.*?)>", re.S)
@@ -120,6 +115,7 @@ class InferDataset(Dataset):
             self.proc.update(code)
             api_seq = self.proc.get_api_seq()
             code = self.proc.process_train(cut_ratio=0.0)
+            code = self.proc.convert_to_normal(code)
             #tokens = self.encode_print(code, api_seq)
             print(code)
         
@@ -150,6 +146,7 @@ def main():
     infer = InferDataset(tokenizer, args)
 
     infer.process_print()
+    print("##################################################")
     infer.process_print_posex()
 
 if __name__ == "__main__":

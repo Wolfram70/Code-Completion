@@ -1,6 +1,3 @@
-# -*- coding:utf-8 -*-
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
 import os
 import json
 import re
@@ -132,7 +129,9 @@ class processor(object):
                 if (
                     (node.type == "call" and child.type != "argument_list") or
                     (node.type == "attribute") or
-                    (node.type in ["import_statement", "import_from_statement"])
+                    (node.type in ["import_statement", "import_from_statement"]) or
+                    (node.type == "class_definition" and child.id == node.children[1].id) or
+                    (node.type == "function_definition" and child.id == node.children[1].id)
                 ):
                     self._get_var_names_from_node(child, vnames, True)
                 else:
@@ -200,7 +199,6 @@ class processor(object):
     def RenameAndInsertDeadcode(self, indent=True):
         fname = self.get_func_name()
         vnames = [x for x in self.get_var_names() if x not in self.preserve_words]
-        print(vnames)
         newvnames = [x for x in vnames]
         replaced = {v: v for i, v in enumerate(vnames)}
         unusedvars = []
@@ -215,28 +213,33 @@ class processor(object):
             self._replace_var_names_from_node(self.tree.root_node, replaced)
             code_string = self.untokenize(indent, replaced=True)
             replace_with = fill_mask(code_string)
+            replaced_word = ''
             try:
-                i = 0
-                while replace_with[0][i]['token_str'] in vnames or replace_with[0][i]['token_str'] in newvnames or replace_with[0][i]['token_str'].lstrip(" ") == "":
-                    i += 1
-                replaced[v] = replace_with[0][i]['token_str']
+                i = random.randint(0, len(replace_with) - 1)
+                j = random.randint(0, len(replace_with[i]) - 1)
+                while replace_with[i][j]['token_str'].lstrip(" ") in newvnames or replace_with[0][i]['token_str'].lstrip(" ") == "" or replace_with[i][j]['token_str'].lstrip(" ") in self.preserve_words or replace_with[i][j]['token_str'].lstrip(" ").isdigit():
+                    i = random.randint(0, len(replace_with) - 1)
+                    j = random.randint(0, len(replace_with[i]) - 1)
+                replaced[v] = replace_with[0][i]['token_str'].lstrip(" ")
             except:
-                i = 0
-                while replace_with[i]['token_str'] in vnames or replace_with[i]['token_str'] in newvnames or replace_with[i]['token_str'].lstrip(" ") == "":
-                    i += 1
-                replaced[v] = replace_with[i]['token_str']
+                i = random.randint(0, len(replace_with) - 1)
+                while replace_with[i]['token_str'].lstrip(" ") in newvnames or replace_with[i]['token_str'].lstrip(" ") == "" or replace_with[i]['token_str'].lstrip(" ") in self.preserve_words or replace_with[i]['token_str'].lstrip(" ").isdigit():
+                    i = random.randint(0, len(replace_with) - 1)
+                replaced[v] = replace_with[i]['token_str'].lstrip(" ")
             self.index_to_new_code = {}
             self._replace_var_names_from_node(self.tree.root_node, replaced)
-            newvnames = [x for x in self.get_var_names() if x not in self.preserve_words]
+            for i, nv in enumerate(newvnames):
+                if nv == v:
+                    newvnames[i] = replaced[v]
             try:
                 for mask in replace_with:
                     for mask_specific in mask:
-                        if mask_specific['token_str'] not in newvnames and mask_specific['token_str'] not in vnames and mask_specific['token_str'] not in unusedvars and mask_specific['token_str'] not in self.preserve_words:
-                            unusedvars.append(mask_specific['token_str'])
+                        if mask_specific['token_str'].lstrip(" ") not in newvnames and mask_specific['token_str'].lstrip(" ") not in unusedvars and mask_specific['token_str'].lstrip(" ") not in self.preserve_words and mask_specific['token_str'].lstrip(" ").isdigit() == False:
+                            unusedvars.append(mask_specific['token_str'].lstrip(" "))
             except:
                 for mask_specific in replace_with:
-                    if mask_specific['token_str'] not in newvnames and mask_specific['token_str'] not in vnames and mask_specific['token_str'] not in unusedvars and mask_specific['token_str'] not in self.preserve_words:
-                        unusedvars.append(mask_specific['token_str'])
+                    if mask_specific['token_str'].lstrip(" ") not in newvnames and mask_specific['token_str'].lstrip(" ") not in unusedvars and mask_specific['token_str'].lstrip(" ") not in self.preserve_words and mask_specific['token_str'].lstrip(" ").isdigit() == False:
+                        unusedvars.append(mask_specific['token_str'].lstrip(" "))
         cands = random.sample(unusedvars, len(unusedvars))
         deadcode = self.insert_dead_code(cands)
         code_string = self.untokenize(indent, deadcode, True)
@@ -244,7 +247,7 @@ class processor(object):
     
     def process_train(self, ratio=0.85, indent=True, add_dead_code=False, cut_ratio=0.0):
         code_string , _ = self.RenameAndInsertDeadcode()
-        return self.convert_to_normal(code_string)
+        return code_string
 
     def insert_dead_code(self, v):
         # dead code types, vars that can't appear in original code
